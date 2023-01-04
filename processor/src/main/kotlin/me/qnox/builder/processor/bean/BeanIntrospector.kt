@@ -1,4 +1,4 @@
-package me.qnox.ksp.processor
+package me.qnox.builder.processor.bean
 
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -10,12 +10,11 @@ class BeanIntrospector {
     fun getBean(s: KSClassDeclaration): Bean {
         return beans.getOrPut(s) {
             Bean(
-                s.getDeclaredProperties().map {
-                    Property(
-                        it.simpleName.asString(),
-                        it.type
-                    )
-                }.toList()
+                s.getDeclaredProperties()
+                    .map {
+                        Property(it.simpleName.asString(), it.type)
+                    }
+                    .toList()
             )
         }
     }

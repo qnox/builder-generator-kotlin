@@ -1,4 +1,4 @@
-package me.qnox.ksp.processor
+package me.qnox.builder.processor
 
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment

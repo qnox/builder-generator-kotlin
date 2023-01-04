@@ -1,4 +1,4 @@
-package me.qnox.ksp.processor
+package me.qnox.builder.processor.bean
 
 import com.google.devtools.ksp.symbol.KSTypeReference
 
