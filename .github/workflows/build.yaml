@@ -48,18 +48,8 @@ jobs:
           MAVEN_GPG_PRIVATE_KEY_ID: ${{ secrets.MAVEN_GPG_PRIVATE_KEY_ID }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      #      - name: Create tag
-      #        uses: actions/github-script@v6.3.3
-      #        with:
-      #          script: |
-      #            github.rest.git.createRef({
-      #              owner: context.repo.owner,
-      #              repo: context.repo.repo,
-      #              ref: 'refs/tags/${{steps.gitversion.outputs.version}}',
-      #              sha: context.sha
-      #            })
-
       - name: Create Release
+        if: ${{ github.ref == 'refs/heads/main' }}
         id: create_release
         uses: actions/create-release@v1
         env:
