@@ -35,6 +35,16 @@ jobs:
         with:
           arguments: build
 
+      - name: Sources
+        uses: gradle/gradle-build-action@v2.3.3
+        with:
+          arguments: sourcesJar
+
+      - name: Javadoc
+        uses: gradle/gradle-build-action@v2.3.3
+        with:
+          arguments: javadocJar
+
       - name: Publish package
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: gradle/gradle-build-action@v2.3.3
