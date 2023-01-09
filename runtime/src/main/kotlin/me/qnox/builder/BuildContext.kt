@@ -17,7 +17,6 @@ class BuildContext {
     fun <T : Any> preprocess(type: KClass<T>, preprocessor: T.() -> Unit) {
         preprocessors[type] = preprocessor as (Any) -> Unit
     }
-
 }
 
 fun builderContext(block: BuildContext.() -> Unit): BuildContext {

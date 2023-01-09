@@ -1,13 +1,12 @@
-import io.github.gradlenexus.publishplugin.NexusPublishException
-import io.github.gradlenexus.publishplugin.NexusPublishExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
-
+import com.diffplug.gradle.spotless.SpotlessExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 
 plugins {
     kotlin("jvm") version "1.7.21" apply false
     `maven-publish`
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
     id("org.jetbrains.dokka") version "1.7.20"
+    id("com.diffplug.spotless") version "6.12.1" apply false
 }
 
 buildscript {
@@ -29,10 +28,11 @@ subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
+    apply(plugin = "com.diffplug.spotless")
 
     val sourcesJar by tasks.registering(Jar::class) {
         archiveClassifier.set("sources")
-        from(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets["main"].kotlin)
+        from(project.extensions.getByType<KotlinProjectExtension>().sourceSets["main"].kotlin)
     }
     val javadocJar by tasks.creating(Jar::class) {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
@@ -80,10 +80,17 @@ subprojects {
             val signingPassphrase = System.getenv("MAVEN_GPG_PASSPHRASE")
             useInMemoryPgpKeys(signingKeyId, signingKey, signingPassphrase)
         }
-        setRequired({
-            gradle.taskGraph.hasTask("publish")
-        })
+        setRequired(
+            {
+                gradle.taskGraph.hasTask("publish")
+            },
+        )
         sign(publishing.publications)
+    }
+    configure<SpotlessExtension> {
+        kotlin {
+            ktlint("0.48.1")
+        }
     }
 }
 

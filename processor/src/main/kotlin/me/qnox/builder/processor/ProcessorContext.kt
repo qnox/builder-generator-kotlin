@@ -1,5 +1,6 @@
 package me.qnox.builder.processor
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.ClassName
@@ -19,9 +20,12 @@ class ProcessorContext(private val annotations: Set<String>) {
 
     fun isAnnotated(ksClassDeclaration: KSClassDeclaration): Boolean {
         return ksClassDeclaration.annotations.any {
-            annotations.contains((it.annotationType.resolve().declaration as KSClassDeclaration).qualifiedName?.asString())
+            annotations.contains(resolveAnnotationName(it))
         }
     }
+
+    private fun resolveAnnotationName(it: KSAnnotation) =
+        (it.annotationType.resolve().declaration as KSClassDeclaration).qualifiedName?.asString()
 
     fun getPropertyType(propertyType: KSTypeReference): TypeName {
         return if (isAnnotated(propertyType.resolve().declaration as KSClassDeclaration)) {

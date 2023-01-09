@@ -4,13 +4,25 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Nullability
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.UNIT
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toTypeName
 import me.qnox.builder.BuildContext
 import me.qnox.builder.ValueHolder
 import me.qnox.builder.processor.bean.Property
+import javax.annotation.processing.Generated
 
 private val valueHolder = ValueHolder::class.asClassName()
 
@@ -19,6 +31,11 @@ class BuilderGenerator {
     fun generateBuilderType(context: ProcessorContext, classDeclaration: KSClassDeclaration): TypeSpec {
         val className = context.builderClassName(classDeclaration)
         val classBuilder = TypeSpec.classBuilder(className)
+        classBuilder.addAnnotation(
+            AnnotationSpec.builder(Generated::class)
+                .addMember("value = [%S]", BuilderGenerator::class.asClassName())
+                .build(),
+        )
         classBuilder.addSuperinterface(context.dslInterfaceName(classDeclaration))
         val bean = context.introspector.getBean(classDeclaration)
         bean.properties.map {
@@ -38,7 +55,7 @@ class BuilderGenerator {
         classBuilder.addType(
             generateInternalType(context, internalClassName, classDeclaration) {
                 CodeBlock.of("this@%T.%L", className, it)
-            }
+            },
         )
 
         return classBuilder
@@ -47,15 +64,15 @@ class BuilderGenerator {
                     .addParameter(
                         ParameterSpec.builder(
                             "context",
-                            BuildContext::class.asClassName().copy(nullable = true)
+                            BuildContext::class.asClassName().copy(nullable = true),
                         )
                             .defaultValue("null")
-                            .build()
+                            .build(),
                     )
                     .returns(returnType)
                     .addStatement("context?.preprocess(%T())", internalClassName)
                     .addStatement("return %T(\n%L)", returnType, init)
-                    .build()
+                    .build(),
             )
             .addOriginatingKSFile(classDeclaration.containingFile!!)
             .build()
@@ -65,7 +82,7 @@ class BuilderGenerator {
         context: ProcessorContext,
         internalClassName: ClassName,
         classDeclaration: KSClassDeclaration,
-        propertyAccessor: (String) -> CodeBlock
+        propertyAccessor: (String) -> CodeBlock,
     ): TypeSpec {
         val classBuilder = TypeSpec.classBuilder(internalClassName)
         classBuilder.addModifiers(KModifier.INNER)
@@ -80,7 +97,7 @@ class BuilderGenerator {
             classBuilder.addProperty(
                 PropertySpec.builder(it.name, type)
                     .getter(FunSpec.getterBuilder().addStatement("return %L", propertyAccessor(it.name)).build())
-                    .build()
+                    .build(),
             )
         }
 
@@ -97,10 +114,11 @@ class BuilderGenerator {
         parameters.forEach {
             val propertyInitializer = if (isBuilder(context, it.type)) {
                 val builderType = context.getPropertyType(it.type)
+                val nullable = it.type.toTypeName().isNullable
                 CodeBlock.of(
-                    "this.%L.value${if (it.type.toTypeName().isNullable) "?" else ""}.let { %T().apply(it).build(context) }",
+                    "this.%L.value${if (nullable) "?" else ""}.let { %T().apply(it).build(context) }",
                     it.name?.asString(),
-                    builderType
+                    builderType,
                 )
             } else {
                 CodeBlock.of("this.%L.value", it.name?.asString())
@@ -109,8 +127,8 @@ class BuilderGenerator {
                 CodeBlock.of(
                     "%L = %L,\n",
                     it.name?.asString(),
-                    propertyInitializer
-                )
+                    propertyInitializer,
+                ),
             )
         }
         return codeBlock.build()
@@ -119,20 +137,20 @@ class BuilderGenerator {
     private fun addSimpleProperty(
         propertyType: KSTypeReference,
         classBuilder: TypeSpec.Builder,
-        it: Property
+        it: Property,
     ): TypeSpec.Builder {
         val type = valueHolder.parameterizedBy(propertyType.toTypeName())
         classBuilder.addProperty(
             PropertySpec.builder(it.name, type, KModifier.PRIVATE)
                 .initializer("%T(%S, %L)", type, it.name, it.type.resolve().nullability == Nullability.NULLABLE)
-                .build()
+                .build(),
         )
         return classBuilder.addFunction(
             FunSpec.builder(it.name)
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("v", propertyType.toTypeName())
                 .addCode(CodeBlock.of("this.%L.set(v)", it.name))
-                .build()
+                .build(),
         )
     }
 
@@ -140,7 +158,7 @@ class BuilderGenerator {
         context: ProcessorContext,
         propertyType: KSTypeReference,
         classBuilder: TypeSpec.Builder,
-        property: Property
+        property: Property,
     ): TypeSpec.Builder {
         val type = builderPropertyType(context, propertyType)
         classBuilder.addProperty(
@@ -149,9 +167,9 @@ class BuilderGenerator {
                     "%T(%S, %L)",
                     type,
                     property.name,
-                    property.type.resolve().nullability == Nullability.NULLABLE
+                    property.type.resolve().nullability == Nullability.NULLABLE,
                 )
-                .build()
+                .build(),
         )
         val builderType = context.getPropertyType(propertyType)
         return classBuilder.addFunction(
@@ -159,7 +177,7 @@ class BuilderGenerator {
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("builder", builderLambdaType(builderType))
                 .addCode(CodeBlock.of("this.%L.set(builder)", property.name))
-                .build()
+                .build(),
         )
     }
 
@@ -168,11 +186,10 @@ class BuilderGenerator {
 
     private fun builderPropertyType(
         context: ProcessorContext,
-        propertyType: KSTypeReference
+        propertyType: KSTypeReference,
     ) =
         valueHolder.parameterizedBy(
             builderLambdaType(context.getPropertyType(propertyType))
-                .copy(nullable = propertyType.resolve().nullability != Nullability.NOT_NULL)
+                .copy(nullable = propertyType.resolve().nullability != Nullability.NOT_NULL),
         )
-
 }

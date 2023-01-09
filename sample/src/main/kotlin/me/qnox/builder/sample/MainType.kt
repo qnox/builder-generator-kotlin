@@ -14,14 +14,16 @@ val builder = MainTypeBuilder().apply {
         i(1)
     }
 }
-    .build(builderContext {
-        preprocess(MainTypeBuilder.Internal::class) {
-            i.ifAbsent { 2 }
-        }
-        preprocess(SubTypeBuilder.Internal::class) {
-            s.ifAbsent { "test" }
-        }
-    })
+    .build(
+        builderContext {
+            preprocess(MainTypeBuilder.Internal::class) {
+                i.ifAbsent { 2 }
+            }
+            preprocess(SubTypeBuilder.Internal::class) {
+                s.ifAbsent { "test" }
+            }
+        },
+    )
 
 fun main() {
     println(builder.i)

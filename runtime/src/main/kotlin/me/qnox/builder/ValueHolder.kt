@@ -15,7 +15,6 @@ class ValueHolder<T>(private val property: String, private val nullable: Boolean
             _set = true
         }
 
-
     fun set(value: T) {
         this.value = value
     }
@@ -25,7 +24,4 @@ class ValueHolder<T>(private val property: String, private val nullable: Boolean
             _value = supplier()
         }
     }
-
 }
-
-

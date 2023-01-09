@@ -14,7 +14,7 @@ class BeanIntrospector {
                     .map {
                         Property(it.simpleName.asString(), it.type)
                     }
-                    .toList()
+                    .toList(),
             )
         }
     }
