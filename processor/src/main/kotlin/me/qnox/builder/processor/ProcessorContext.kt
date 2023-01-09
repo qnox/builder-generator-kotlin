@@ -11,8 +11,11 @@ class ProcessorContext(private val annotations: Set<String>) {
 
     val introspector = BeanIntrospector()
 
-    fun generateName(s: KSClassDeclaration) =
+    fun builderClassName(s: KSClassDeclaration) =
         ClassName(s.packageName.asString(), s.simpleName.asString() + "Builder")
+
+    fun dslInterfaceName(s: KSClassDeclaration) =
+        ClassName(s.packageName.asString(), s.simpleName.asString() + "Dsl")
 
     fun isAnnotated(ksClassDeclaration: KSClassDeclaration): Boolean {
         return ksClassDeclaration.annotations.any {
@@ -23,7 +26,7 @@ class ProcessorContext(private val annotations: Set<String>) {
     fun getPropertyType(propertyType: KSTypeReference): TypeName {
         return if (isAnnotated(propertyType.resolve().declaration as KSClassDeclaration)) {
             val s = propertyType.resolve().declaration as KSClassDeclaration
-            generateName(s)
+            builderClassName(s)
         } else {
             propertyType.toTypeName()
         }

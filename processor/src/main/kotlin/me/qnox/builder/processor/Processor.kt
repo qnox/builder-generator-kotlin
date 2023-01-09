@@ -1,7 +1,6 @@
 package me.qnox.builder.processor
 
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.*
@@ -11,30 +10,47 @@ import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
 import me.qnox.builder.Builder
 
-class Processor(private val codeGenerator: CodeGenerator, private val logger: KSPLogger) : SymbolProcessor {
+class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     private val annotationName = Builder::class.qualifiedName ?: error("No qualified name for annotation class")
 
     private val annotations = mutableSetOf(annotationName)
 
+    private val builderGenerator = BuilderGenerator()
+
+    private val dslInterfaceGenerator = DslInterfaceGenerator()
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         updateAnnotations(resolver)
         val context = ProcessorContext(annotations)
-        val builderGenerator = BuilderGenerator()
         return getAnnotatedClasses(resolver, annotations)
             .filter { it.classKind == ClassKind.CLASS }
             .partition { it.validate() }
             .let { (valid, defer) ->
                 valid.forEach {
-                    val builderClassName = context.generateName(it)
-                    val fileName = builderClassName.simpleName
-                    val file = FileSpec.builder(it.packageName.asString(), fileName)
-                        .addType(builderGenerator.generateBuilderType(context, it))
-                        .build()
-                    file.writeTo(codeGenerator, file.kspDependencies(false))
+                    writeDsl(context, it)
+                    writeBuilder(context, it)
                 }
                 defer
             }
+    }
+
+    private fun writeDsl(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
+        val builderClassName = context.dslInterfaceName(classDeclaration)
+        val fileName = builderClassName.simpleName
+        val file = FileSpec.builder(classDeclaration.packageName.asString(), fileName)
+            .addType(dslInterfaceGenerator.generateBuilderType(context, classDeclaration))
+            .build()
+        file.writeTo(codeGenerator, file.kspDependencies(false))
+    }
+
+    private fun writeBuilder(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
+        val builderClassName = context.builderClassName(classDeclaration)
+        val fileName = builderClassName.simpleName
+        val file = FileSpec.builder(classDeclaration.packageName.asString(), fileName)
+            .addType(builderGenerator.generateBuilderType(context, classDeclaration))
+            .build()
+        file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
     private fun updateAnnotations(resolver: Resolver) {

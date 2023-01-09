@@ -17,11 +17,10 @@ private val valueHolder = ValueHolder::class.asClassName()
 class BuilderGenerator {
 
     fun generateBuilderType(context: ProcessorContext, classDeclaration: KSClassDeclaration): TypeSpec {
-        val className = context.generateName(classDeclaration)
+        val className = context.builderClassName(classDeclaration)
         val classBuilder = TypeSpec.classBuilder(className)
+        classBuilder.addSuperinterface(context.dslInterfaceName(classDeclaration))
         val bean = context.introspector.getBean(classDeclaration)
-        val returnType = classDeclaration.asType(emptyList()).toTypeName()
-        val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
         bean.properties.map {
             val propertyType = it.type
             if (isBuilder(context, propertyType)) {
@@ -30,6 +29,9 @@ class BuilderGenerator {
                 addSimpleProperty(propertyType, classBuilder, it)
             }
         }
+
+        val returnType = classDeclaration.asType(emptyList()).toTypeName()
+        val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
         val init = generateInitializer(context, parameters)
 
         val internalClassName = ClassName.bestGuess("Internal")
@@ -127,6 +129,7 @@ class BuilderGenerator {
         )
         return classBuilder.addFunction(
             FunSpec.builder(it.name)
+                .addModifiers(KModifier.OVERRIDE)
                 .addParameter("v", propertyType.toTypeName())
                 .addCode(CodeBlock.of("this.%L.set(v)", it.name))
                 .build()
@@ -153,6 +156,7 @@ class BuilderGenerator {
         val builderType = context.getPropertyType(propertyType)
         return classBuilder.addFunction(
             FunSpec.builder(property.name)
+                .addModifiers(KModifier.OVERRIDE)
                 .addParameter("builder", builderLambdaType(builderType))
                 .addCode(CodeBlock.of("this.%L.set(builder)", property.name))
                 .build()
