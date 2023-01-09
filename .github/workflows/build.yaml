@@ -43,7 +43,7 @@ jobs:
       - name: Javadoc
         uses: gradle/gradle-build-action@v2.3.3
         with:
-          arguments: javadocJar
+          arguments: javadocJar --no-daemon
 
       - name: Publish package
         if: ${{ github.ref == 'refs/heads/main' }}
