@@ -16,10 +16,10 @@ val builder = MainTypeBuilder().apply {
 }
     .build(
         builderContext {
-            preprocess(MainTypeBuilder.Internal::class) {
+            preprocess(MainTypeBuilder::class) {
                 i.ifAbsent { 2 }
             }
-            preprocess(SubTypeBuilder.Internal::class) {
+            preprocess(SubTypeBuilder::class) {
                 s.ifAbsent { "test" }
             }
         },

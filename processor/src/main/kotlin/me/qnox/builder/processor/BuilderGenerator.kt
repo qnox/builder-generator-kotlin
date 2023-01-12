@@ -5,7 +5,6 @@ import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -51,13 +50,6 @@ class BuilderGenerator {
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
         val init = generateInitializer(context, parameters)
 
-        val internalClassName = ClassName.bestGuess("Internal")
-        classBuilder.addType(
-            generateInternalType(context, internalClassName, classDeclaration) {
-                CodeBlock.of("this@%T.%L", className, it)
-            },
-        )
-
         return classBuilder
             .addFunction(
                 FunSpec.builder("build")
@@ -70,38 +62,10 @@ class BuilderGenerator {
                             .build(),
                     )
                     .returns(returnType)
-                    .addStatement("context?.preprocess(%T())", internalClassName)
+                    .addStatement("context?.preprocess(this)")
                     .addStatement("return %T(\n%L)", returnType, init)
                     .build(),
             )
-            .addOriginatingKSFile(classDeclaration.containingFile!!)
-            .build()
-    }
-
-    private fun generateInternalType(
-        context: ProcessorContext,
-        internalClassName: ClassName,
-        classDeclaration: KSClassDeclaration,
-        propertyAccessor: (String) -> CodeBlock,
-    ): TypeSpec {
-        val classBuilder = TypeSpec.classBuilder(internalClassName)
-        classBuilder.addModifiers(KModifier.INNER)
-        val bean = context.introspector.getBean(classDeclaration)
-        bean.properties.map {
-            val propertyType = it.type
-            val type = if (isBuilder(context, propertyType)) {
-                builderPropertyType(context, propertyType)
-            } else {
-                valueHolder.parameterizedBy(propertyType.toTypeName())
-            }
-            classBuilder.addProperty(
-                PropertySpec.builder(it.name, type)
-                    .getter(FunSpec.getterBuilder().addStatement("return %L", propertyAccessor(it.name)).build())
-                    .build(),
-            )
-        }
-
-        return classBuilder
             .addOriginatingKSFile(classDeclaration.containingFile!!)
             .build()
     }
@@ -141,7 +105,7 @@ class BuilderGenerator {
     ): TypeSpec.Builder {
         val type = valueHolder.parameterizedBy(propertyType.toTypeName())
         classBuilder.addProperty(
-            PropertySpec.builder(it.name, type, KModifier.PRIVATE)
+            PropertySpec.builder(it.name, type)
                 .initializer("%T(%S, %L)", type, it.name, it.type.resolve().nullability == Nullability.NULLABLE)
                 .build(),
         )
