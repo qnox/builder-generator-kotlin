@@ -12,8 +12,9 @@ import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
 import me.qnox.builder.Builder
 
-class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
-
+class Processor(
+    private val codeGenerator: CodeGenerator,
+) : SymbolProcessor {
     private val annotationName = Builder::class.qualifiedName ?: error("No qualified name for annotation class")
 
     private val annotations = mutableSetOf(annotationName)
@@ -40,18 +41,22 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     private fun writeDsl(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
         val builderClassName = context.dslInterfaceName(classDeclaration)
         val fileName = builderClassName.simpleName
-        val file = FileSpec.builder(classDeclaration.packageName.asString(), fileName)
-            .addType(dslInterfaceGenerator.generateBuilderType(context, classDeclaration))
-            .build()
+        val file =
+            FileSpec
+                .builder(classDeclaration.packageName.asString(), fileName)
+                .addType(dslInterfaceGenerator.generateBuilderType(context, classDeclaration))
+                .build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
     private fun writeBuilder(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
         val builderClassName = context.builderClassName(classDeclaration)
         val fileName = builderClassName.simpleName
-        val file = FileSpec.builder(classDeclaration.packageName.asString(), fileName)
-            .addType(builderGenerator.generateBuilderType(context, classDeclaration))
-            .build()
+        val file =
+            FileSpec
+                .builder(classDeclaration.packageName.asString(), fileName)
+                .addType(builderGenerator.generateBuilderType(context, classDeclaration))
+                .build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
@@ -60,20 +65,21 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     }
 
     private fun metaAnnotations(resolver: Resolver, annotationName: String): Set<String> {
-        val metaAnnotations = resolver.getSymbolsWithAnnotation(annotationName)
-            .filterIsInstance<KSClassDeclaration>()
-            .filter { it.classKind == ClassKind.ANNOTATION_CLASS }
-            .mapNotNull { it.qualifiedName?.asString() }
-            .flatMap { metaAnnotations(resolver, it) }
-            .toSet()
+        val metaAnnotations =
+            resolver
+                .getSymbolsWithAnnotation(annotationName)
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { it.classKind == ClassKind.ANNOTATION_CLASS }
+                .mapNotNull { it.qualifiedName?.asString() }
+                .flatMap { metaAnnotations(resolver, it) }
+                .toSet()
         return setOf(annotationName) + metaAnnotations
     }
 
-    private fun getAnnotatedClasses(resolver: Resolver, annotationNames: Set<String>): Sequence<KSClassDeclaration> {
-        return annotationNames
+    private fun getAnnotatedClasses(resolver: Resolver, annotationNames: Set<String>): Sequence<KSClassDeclaration> =
+        annotationNames
             .asSequence()
             .flatMap { resolver.getSymbolsWithAnnotation(it) }
             .filterIsInstance<KSClassDeclaration>()
             .filter { it.classKind == ClassKind.CLASS }
-    }
 }

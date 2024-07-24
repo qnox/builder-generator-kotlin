@@ -14,12 +14,12 @@ import me.qnox.builder.processor.bean.Property
 import javax.annotation.processing.Generated
 
 class DslInterfaceGenerator {
-
     fun generateBuilderType(context: ProcessorContext, classDeclaration: KSClassDeclaration): TypeSpec {
         val className = context.dslInterfaceName(classDeclaration)
         val classBuilder = TypeSpec.interfaceBuilder(className)
         classBuilder.addAnnotation(
-            AnnotationSpec.builder(Generated::class)
+            AnnotationSpec
+                .builder(Generated::class)
                 .addMember("value = [%S]", BuilderGenerator::class.asClassName())
                 .build(),
         )
@@ -39,14 +39,13 @@ class DslInterfaceGenerator {
         propertyType: KSTypeReference,
         classBuilder: TypeSpec.Builder,
         it: Property,
-    ): TypeSpec.Builder {
-        return classBuilder.addFunction(
-            FunSpec.builder(it.name)
-                .addModifiers(KModifier.ABSTRACT)
-                .addParameter("v", propertyType.toTypeName())
-                .build(),
-        )
-    }
+    ): TypeSpec.Builder = classBuilder.addFunction(
+        FunSpec
+            .builder(it.name)
+            .addModifiers(KModifier.ABSTRACT)
+            .addParameter("v", propertyType.toTypeName())
+            .build(),
+    )
 
     private fun addBuilderProperty(
         context: ProcessorContext,
@@ -56,7 +55,8 @@ class DslInterfaceGenerator {
     ): TypeSpec.Builder {
         val builderType = context.getPropertyType(propertyType)
         return classBuilder.addFunction(
-            FunSpec.builder(property.name)
+            FunSpec
+                .builder(property.name)
                 .addModifiers(KModifier.ABSTRACT)
                 .addParameter("builder", LambdaTypeName.get(builderType, returnType = UNIT))
                 .build(),

@@ -1,18 +1,21 @@
 package me.qnox.builder
 
-class ValueHolder<T>(private val property: String, private val nullable: Boolean) {
-
+class ValueHolder<T>(
+    private val property: String,
+    private val nullable: Boolean,
+) {
+    private var set = false
     private var _value: T? = null
-    private var _set = false
     var value: T
-        get() = if (!nullable && _value == null) {
-            error("$property was not initialized")
-        } else {
-            _value as T
-        }
+        get() =
+            if (!nullable && _value == null) {
+                error("$property was not initialized")
+            } else {
+                _value as T
+            }
         set(value) {
             _value = value
-            _set = true
+            set = true
         }
 
     fun set(value: T) {
@@ -20,7 +23,7 @@ class ValueHolder<T>(private val property: String, private val nullable: Boolean
     }
 
     fun ifAbsent(supplier: () -> T) {
-        if (!_set) {
+        if (!set) {
             _value = supplier()
         }
     }

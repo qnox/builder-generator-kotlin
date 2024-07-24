@@ -90,7 +90,7 @@ subprojects {
     configure<SpotlessExtension> {
         kotlin {
             targetExclude("**/generated/**")
-            ktlint()
+            ktlint("1.3.1")
         }
     }
 }
