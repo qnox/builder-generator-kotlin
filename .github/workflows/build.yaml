@@ -44,9 +44,7 @@ jobs:
 
       - name: Publish package
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: sign publishToSonatype closeAndReleaseSonatypeStagingRepository --info
+        run: ./gradlew sign publishToSonatype closeAndReleaseSonatypeStagingRepository --info
         env:
           MAVEN_VERSION: ${{ steps.gitversion.outputs.version }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
