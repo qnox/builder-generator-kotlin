@@ -8,12 +8,3 @@ dependencies {
     implementation(project(":runtime"))
     ksp(project(":processor"))
 }
-
-kotlin {
-    sourceSets.main {
-        kotlin.srcDir("build/generated/ksp/main/kotlin")
-    }
-    sourceSets.test {
-        kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
-}
