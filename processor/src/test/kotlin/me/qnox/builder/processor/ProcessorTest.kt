@@ -6,8 +6,10 @@ import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 
+@OptIn(ExperimentalCompilerApi::class)
 class ProcessorTest {
 
     @Test
