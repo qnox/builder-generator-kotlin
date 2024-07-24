@@ -31,19 +31,16 @@ jobs:
         uses: gradle/actions/wrapper-validation@v3
 
       - name: Build
-        uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: build
+        uses: gradle/actions/setup-gradle@v3.5.0
+
+      - name: Build
+        run: ./gradlew build
 
       - name: Sources
-        uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: sourcesJar
+        run: ./gradlew sourcesJar
 
       - name: Javadoc
-        uses: gradle/gradle-build-action@v3.5.0
-        with:
-          arguments: javadocJar --no-daemon
+        run: ./gradlew javadocJar
 
       - name: Publish package
         if: ${{ github.ref == 'refs/heads/main' }}
