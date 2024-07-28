@@ -8,6 +8,7 @@ class MainType(
     val subType: SubType,
     val nullableI: Int?,
     val nullableSubType: SubType?,
+    val list: List<SubType>,
 )
 
 @MetaAnnotation

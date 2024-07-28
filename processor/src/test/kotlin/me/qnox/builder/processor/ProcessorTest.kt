@@ -4,9 +4,15 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.reflection.shouldHaveFunction
 import io.kotest.matchers.shouldBe
+import me.qnox.builder.ListDsl
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.KVariance
+import kotlin.reflect.full.createType
 import kotlin.test.Test
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -54,6 +60,46 @@ class ProcessorTest {
             )
         val generatedBuilder = result.classLoader.loadClass("KClassBuilder")
         generatedBuilder.getDeclaredMethod("attr", Function1::class.java).shouldNotBeNull()
+    }
+
+    @Test
+    fun `builder should support collections`() {
+        val result =
+            compile(
+                SourceFile.kotlin(
+                    "KClass.kt",
+                    """
+                    import me.qnox.builder.Builder
+    
+                    @Builder
+                    class KClass(val list: List<KSubClass>)
+                """,
+                ),
+                SourceFile.kotlin(
+                    "KSubClass.kt",
+                    """
+                    import me.qnox.builder.Builder
+    
+                    @Builder
+                    class KSubClass(val attr: Int)
+                """,
+                ),
+            )
+        val generatedBuilder = result.classLoader.loadClass("KClassBuilder").kotlin
+        val generatedSubclassBuilder = result.classLoader.loadClass("KSubClassBuilder").kotlin
+        generatedBuilder.shouldHaveFunction("list") { function ->
+            function.parameters.shouldHaveSize(2)
+            function.parameters[1].type.arguments[0].type.shouldBe(
+                ListDsl::class.createType(
+                    listOf(
+                        KTypeProjection(
+                            KVariance.INVARIANT,
+                            generatedSubclassBuilder.createType(),
+                        ),
+                    ),
+                ),
+            )
+        }
     }
 
     private fun compile(vararg typeSource: SourceFile): KotlinCompilation.Result {

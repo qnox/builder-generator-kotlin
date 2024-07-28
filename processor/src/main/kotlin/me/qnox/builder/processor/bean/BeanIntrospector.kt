@@ -11,7 +11,7 @@ class BeanIntrospector {
             s
                 .getDeclaredProperties()
                 .map {
-                    Property(it.simpleName.asString(), it.type)
+                    Property(it)
                 }.toList(),
         )
     }

@@ -10,6 +10,7 @@ dependencies {
     testImplementation("com.google.devtools.ksp:symbol-processing:1.9.25-1.0.20")
     testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.6.0")
     testImplementation("io.kotest:kotest-assertions-core:5.5.4")
+    testImplementation(kotlin("reflect"))
 }
 
 tasks.test {

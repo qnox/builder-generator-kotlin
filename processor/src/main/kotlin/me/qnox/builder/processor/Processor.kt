@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
 import me.qnox.builder.Builder
@@ -19,13 +20,9 @@ class Processor(
 
     private val annotations = mutableSetOf(annotationName)
 
-    private val builderGenerator = BuilderGenerator()
-
-    private val dslInterfaceGenerator = DslInterfaceGenerator()
-
     override fun process(resolver: Resolver): List<KSAnnotated> {
         updateAnnotations(resolver)
-        val context = ProcessorContext(annotations)
+        val context = ProcessorContext(resolver, annotations)
         return getAnnotatedClasses(resolver, annotations)
             .filter { it.classKind == ClassKind.CLASS }
             .partition { it.validate() }
@@ -38,14 +35,29 @@ class Processor(
             }
     }
 
+    private fun generateType(
+        context: ProcessorContext,
+        classDeclaration: KSClassDeclaration,
+        classGenerator: ClassGenerator,
+    ): TypeSpec {
+        val bean = context.introspector.getBean(classDeclaration)
+        bean.properties.map { property ->
+            val propertyType = property.type
+            val propertyName = property.name
+            classGenerator.addProperty(context, propertyName, propertyType)
+        }
+        return classGenerator.type()
+    }
+
     private fun writeDsl(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
         val builderClassName = context.dslInterfaceName(classDeclaration)
         val fileName = builderClassName.simpleName
         val file =
             FileSpec
                 .builder(classDeclaration.packageName.asString(), fileName)
-                .addType(dslInterfaceGenerator.generateBuilderType(context, classDeclaration))
-                .build()
+                .addType(
+                    generateType(context, classDeclaration, DslInterfaceClassGenerator(context, classDeclaration)),
+                ).build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
@@ -55,8 +67,9 @@ class Processor(
         val file =
             FileSpec
                 .builder(classDeclaration.packageName.asString(), fileName)
-                .addType(builderGenerator.generateBuilderType(context, classDeclaration))
-                .build()
+                .addType(
+                    generateType(context, classDeclaration, BuilderGenerator(context, classDeclaration)),
+                ).build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
