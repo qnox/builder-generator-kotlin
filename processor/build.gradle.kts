@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation("com.google.devtools.ksp:symbol-processing-api:1.9.25-1.0.20")
+    implementation("com.google.devtools.ksp:symbol-processing-api:2.0.0-1.0.24")
     implementation("com.squareup:kotlinpoet-ksp:1.18.1")
     implementation(project(":runtime"))
     testImplementation(kotlin("test"))
