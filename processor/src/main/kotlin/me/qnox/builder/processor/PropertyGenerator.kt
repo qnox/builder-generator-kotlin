@@ -1,6 +1,5 @@
 package me.qnox.builder.processor
 
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
@@ -10,8 +9,8 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import me.qnox.builder.ValueHolder
 
-interface Generator {
-    fun supports(context: ProcessorContext, classDeclaration: KSClassDeclaration): Boolean
+interface PropertyGenerator {
+    fun supports(context: ProcessorContext, type: KSType): Boolean
 
     fun generateTypeName(context: ProcessorContext, type: KSType): TypeName
 

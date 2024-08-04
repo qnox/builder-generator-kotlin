@@ -15,13 +15,13 @@ import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.UNIT
-import me.qnox.builder.processor.Generator
 import me.qnox.builder.processor.ProcessorContext
+import me.qnox.builder.processor.PropertyGenerator
 import me.qnox.builder.processor.valueHolder
 
-class BeanGenerator : Generator {
-    override fun supports(context: ProcessorContext, classDeclaration: KSClassDeclaration): Boolean =
-        context.isAnnotated(classDeclaration)
+class BeanPropertyGenerator : PropertyGenerator {
+    override fun supports(context: ProcessorContext, type: KSType): Boolean =
+        type.declaration.let { it is KSClassDeclaration && context.isAnnotated(it) }
 
     override fun generateTypeName(context: ProcessorContext, type: KSType): TypeName {
         val s = type.declaration as KSClassDeclaration

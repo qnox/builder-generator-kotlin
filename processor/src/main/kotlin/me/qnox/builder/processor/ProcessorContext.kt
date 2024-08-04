@@ -3,14 +3,14 @@ package me.qnox.builder.processor
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.ksp.toTypeName
 import me.qnox.builder.processor.bean.BeanIntrospector
-import me.qnox.builder.processor.generators.BeanGenerator
-import me.qnox.builder.processor.generators.ListGenerator
-import me.qnox.builder.processor.generators.SimpleGenerator
+import me.qnox.builder.processor.generators.BeanPropertyGenerator
+import me.qnox.builder.processor.generators.ListPropertyGenerator
+import me.qnox.builder.processor.generators.SimplePropertyGenerator
 
 class ProcessorContext(
     val resolver: Resolver,
@@ -21,11 +21,11 @@ class ProcessorContext(
 
     private val generators =
         listOf(
-            ListGenerator(),
-            BeanGenerator(),
+            ListPropertyGenerator(),
+            BeanPropertyGenerator(),
         )
 
-    private val fallbackGenerator = SimpleGenerator()
+    private val fallbackGenerator = SimplePropertyGenerator()
 
     fun builderClassName(s: KSClassDeclaration) =
         ClassName(s.packageName.asString(), s.simpleName.asString() + "Builder")
@@ -34,25 +34,15 @@ class ProcessorContext(
 
     fun getPropertyTypeName(propertyType: KSTypeReference): TypeName {
         val resolvedType = propertyType.resolve()
-        return when (val declaration = resolvedType.declaration) {
-            is KSClassDeclaration -> {
-                val generator = getGenerator(declaration)
-                generator.generateTypeName(this, resolvedType)
-            }
-            else -> {
-                propertyType.toTypeName()
-            }
-        }
+        val generator = getGenerator(resolvedType)
+        return generator.generateTypeName(this, resolvedType)
     }
 
-    private fun getGenerator(classDeclaration: KSClassDeclaration): Generator = generators.find {
-        it.supports(this, classDeclaration)
+    private fun getGenerator(type: KSType): PropertyGenerator = generators.find {
+        it.supports(this, type)
     } ?: fallbackGenerator
 
-    internal fun getGenerator(type: KSTypeReference): Generator {
-        val classDeclaration = type.resolve().declaration as KSClassDeclaration
-        return getGenerator(classDeclaration)
-    }
+    internal fun getGenerator(type: KSTypeReference): PropertyGenerator = getGenerator(type.resolve())
 
     fun isAnnotated(ksClassDeclaration: KSClassDeclaration): Boolean = ksClassDeclaration.annotations.any {
         annotations.contains(resolveAnnotationName(it))

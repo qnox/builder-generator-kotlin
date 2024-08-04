@@ -20,14 +20,19 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import me.qnox.builder.ListBuilder
 import me.qnox.builder.ListDsl
-import me.qnox.builder.processor.Generator
 import me.qnox.builder.processor.ProcessorContext
+import me.qnox.builder.processor.PropertyGenerator
 import me.qnox.builder.processor.valueHolder
 
-class ListGenerator : Generator {
+class ListPropertyGenerator : PropertyGenerator {
     @OptIn(KspExperimental::class)
-    override fun supports(context: ProcessorContext, classDeclaration: KSClassDeclaration): Boolean =
-        context.resolver.getKotlinClassByName(List::class.qualifiedName!!) == classDeclaration
+    override fun supports(context: ProcessorContext, type: KSType): Boolean =
+        context.resolver.getKotlinClassByName(List::class.qualifiedName!!) == type.declaration &&
+            type.arguments[0].type?.resolve()?.declaration?.let {
+                it is KSClassDeclaration &&
+                    context.isAnnotated(it)
+            }
+                ?: false
 
     override fun generateTypeName(context: ProcessorContext, type: KSType): TypeName =
         ListDsl::class.asTypeName().parameterizedBy(getItemTypeName(context, type))

@@ -1,6 +1,5 @@
 package me.qnox.builder.processor.generators
 
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
@@ -13,12 +12,12 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
-import me.qnox.builder.processor.Generator
 import me.qnox.builder.processor.ProcessorContext
+import me.qnox.builder.processor.PropertyGenerator
 import me.qnox.builder.processor.valueHolder
 
-class SimpleGenerator : Generator {
-    override fun supports(context: ProcessorContext, classDeclaration: KSClassDeclaration): Boolean = true
+class SimplePropertyGenerator : PropertyGenerator {
+    override fun supports(context: ProcessorContext, type: KSType): Boolean = true
 
     override fun generateTypeName(context: ProcessorContext, type: KSType): TypeName = type.toTypeName()
 

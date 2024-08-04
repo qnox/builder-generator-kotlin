@@ -10,6 +10,7 @@ class MainType(
     val nullableI: Int?,
     val nullableSubType: SubType?,
     val list: List<SubType>,
+    val iList: List<Int>,
 )
 
 @MetaAnnotation
