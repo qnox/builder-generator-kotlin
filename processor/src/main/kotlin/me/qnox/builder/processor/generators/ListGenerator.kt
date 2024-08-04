@@ -40,10 +40,11 @@ class ListGenerator : Generator {
     ) {
         val nullable = propertyType.resolve().nullability == Nullability.NULLABLE
         val type = context.getPropertyTypeName(propertyType)
-        val builderPropertyType = valueHolder.parameterizedBy(LambdaTypeName.get(type, returnType = UNIT))
+        val builderType = getBuilderType(context, propertyType)
+        val builderPropertyType = valueHolder.parameterizedBy(builderType)
         classBuilder.addProperty(
             PropertySpec
-                .builder(propertyName, builderPropertyType, KModifier.PRIVATE)
+                .builder(propertyName, builderPropertyType, KModifier.PUBLIC)
                 .initializer(
                     "%T(%S, %L)",
                     builderPropertyType,
@@ -56,6 +57,19 @@ class ListGenerator : Generator {
                 .builder(propertyName)
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("builder", LambdaTypeName.get(type, returnType = UNIT))
+                .addCode(
+                    CodeBlock.of(
+                        "this.%L.computeIfAbsent { %T { %T() } }?.apply(builder)",
+                        propertyName,
+                        builderType,
+                        getItemBuilderName(context, propertyType.resolve()),
+                    ),
+                ).build(),
+        )
+        classBuilder.addFunction(
+            FunSpec
+                .builder(propertyName)
+                .addParameter("builder", builderType)
                 .addCode(CodeBlock.of("this.%L.set(builder)", propertyName))
                 .build(),
         )
@@ -76,23 +90,15 @@ class ListGenerator : Generator {
         )
     }
 
-    override fun generateBuildCode(
+    override fun getConvertToObjectCode(
         context: ProcessorContext,
         propertyName: KSName,
         propertyType: KSTypeReference,
     ): CodeBlock {
-        val builderType = getBuilderType(context, propertyType)
         val nullable = propertyType.resolve().nullability == Nullability.NULLABLE
         return CodeBlock.of(
-            "this.%L.value${if (nullable) "?" else ""}.let { %T().apply(it).build(context) { i -> %T().apply(i).build(context) } }",
+            "this.%L.value${if (nullable) "?" else ""}.let { it.build(context) { i -> i.build(context) } }",
             propertyName.asString(),
-            builderType,
-            context.builderClassName(
-                getItemType(
-                    context,
-                    propertyType.resolve(),
-                ).resolve().declaration as KSClassDeclaration,
-            ),
         )
     }
 
@@ -105,6 +111,12 @@ class ListGenerator : Generator {
         return itemType
     }
 
+    private fun getItemBuilderName(context: ProcessorContext, type: KSType): TypeName {
+        val param = getItemType(context, type)
+        val itemType = context.builderClassName(param.resolve().declaration as KSClassDeclaration)
+        return itemType
+    }
+
     @OptIn(KspExperimental::class)
     private fun getItemType(context: ProcessorContext, type: KSType): KSTypeReference {
         val param =
@@ -113,4 +125,19 @@ class ListGenerator : Generator {
             )
         return param
     }
+
+    override fun getConvertToBuilderCode(
+        context: ProcessorContext,
+        propertyName: String,
+        type: KSTypeReference,
+        source: String,
+        destination: String,
+    ): CodeBlock = CodeBlock.of(
+        "%L.%L(%T { %T() }.also { builder -> %L.forEach{ builder.item(it.builder()) } })\n",
+        destination,
+        propertyName,
+        getBuilderType(context, type),
+        getItemBuilderName(context, type.resolve()),
+        source,
+    )
 }

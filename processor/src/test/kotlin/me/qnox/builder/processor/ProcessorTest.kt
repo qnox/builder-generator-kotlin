@@ -4,15 +4,15 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.reflection.shouldHaveFunction
 import io.kotest.matchers.shouldBe
 import me.qnox.builder.ListDsl
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.KVariance
 import kotlin.reflect.full.createType
+import kotlin.reflect.full.memberFunctions
 import kotlin.test.Test
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -27,6 +27,27 @@ class ProcessorTest {
                     import me.qnox.builder.Builder
         
                     @Builder
+                    class KClass(val attr: Int)
+                """,
+                ),
+            )
+        val generatedBuilder = result.classLoader.loadClass("KClassBuilder")
+        generatedBuilder.getDeclaredMethod("attr", Int::class.java).shouldNotBeNull()
+    }
+
+    @Test
+    fun `should support meta annotations`() {
+        val result =
+            compile(
+                SourceFile.kotlin(
+                    "KClass.kt",
+                    """
+                    import me.qnox.builder.Builder
+        
+                    @Builder
+                    annotation class Meta 
+
+                    @Meta
                     class KClass(val attr: Int)
                 """,
                 ),
@@ -87,9 +108,11 @@ class ProcessorTest {
             )
         val generatedBuilder = result.classLoader.loadClass("KClassBuilder").kotlin
         val generatedSubclassBuilder = result.classLoader.loadClass("KSubClassBuilder").kotlin
-        generatedBuilder.shouldHaveFunction("list") { function ->
-            function.parameters.shouldHaveSize(2)
-            function.parameters[1].type.arguments[0].type.shouldBe(
+        generatedBuilder.memberFunctions.filter { it.name == "list" }.shouldHaveSingleElement {
+            it.parameters.size == 2 &&
+                it.parameters[1]
+                    .type.arguments[0]
+                    .type ==
                 ListDsl::class.createType(
                     listOf(
                         KTypeProjection(
@@ -97,8 +120,7 @@ class ProcessorTest {
                             generatedSubclassBuilder.createType(),
                         ),
                     ),
-                ),
-            )
+                )
         }
     }
 

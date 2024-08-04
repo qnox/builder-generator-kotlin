@@ -1,5 +1,6 @@
 package me.qnox.builder.sample
 
+import me.qnox.builder.ListBuilder
 import me.qnox.builder.builderContext
 
 @MetaAnnotation
@@ -26,10 +27,13 @@ val builder =
         }.build(
             builderContext {
                 preprocess(MainTypeBuilder::class) {
-                    i.ifAbsent { 2 }
+                    i.computeIfAbsent { 2 }
+                    list.computeIfAbsent {
+                        ListBuilder { SubTypeBuilder() }
+                    }
                 }
                 preprocess(SubTypeBuilder::class) {
-                    s.ifAbsent { "test" }
+                    s.computeIfAbsent { "test" }
                 }
             },
         )

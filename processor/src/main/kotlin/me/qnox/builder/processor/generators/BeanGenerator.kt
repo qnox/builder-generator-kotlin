@@ -58,29 +58,35 @@ class BeanGenerator : Generator {
                 .builder(propertyName)
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("builder", builderLambdaType(typeName))
+                .addCode(CodeBlock.of("this.%L.computeIfAbsent { %T() }?.apply(builder)", propertyName, typeName))
+                .build(),
+        )
+        classBuilder.addFunction(
+            FunSpec
+                .builder(propertyName)
+                .addParameter("builder", typeName)
                 .addCode(CodeBlock.of("this.%L.set(builder)", propertyName))
                 .build(),
         )
     }
 
     private fun builderPropertyType(propertyType: TypeName, nullable: Boolean) = valueHolder.parameterizedBy(
-        builderLambdaType(propertyType)
+        propertyType
             .copy(nullable = nullable),
     )
 
     private fun builderLambdaType(builderType: TypeName) = LambdaTypeName.get(builderType, returnType = UNIT)
 
-    override fun generateBuildCode(
+    override fun getConvertToObjectCode(
         context: ProcessorContext,
         propertyName: KSName,
         propertyType: KSTypeReference,
     ): CodeBlock {
-        val builderType = context.getPropertyTypeName(propertyType)
+        context.getPropertyTypeName(propertyType)
         val nullable = propertyType.resolve().nullability == Nullability.NULLABLE
         return CodeBlock.of(
-            "this.%L.value${if (nullable) "?" else ""}.let { %T().apply(it).build(context) }",
+            "this.%L.value${if (nullable) "?" else ""}.let { it.build(context) }",
             propertyName.asString(),
-            builderType,
         )
     }
 
@@ -99,4 +105,20 @@ class BeanGenerator : Generator {
                 .build(),
         )
     }
+
+    override fun getConvertToBuilderCode(
+        context: ProcessorContext,
+        propertyName: String,
+        type: KSTypeReference,
+        source: String,
+        destination: String,
+    ): CodeBlock = CodeBlock
+        .builder()
+        .addStatement(
+            "%L?.let { %L.%L(%L.builder()) }",
+            source,
+            destination,
+            propertyName,
+            "it",
+        ).build()
 }

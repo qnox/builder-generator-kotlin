@@ -12,6 +12,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
 import me.qnox.builder.Builder
+import me.qnox.builder.processor.bean.Bean
 
 class Processor(
     private val codeGenerator: CodeGenerator,
@@ -22,54 +23,54 @@ class Processor(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         updateAnnotations(resolver)
-        val context = ProcessorContext(resolver, annotations)
+        val context = ProcessorContext(resolver, annotations, Extensions())
         return getAnnotatedClasses(resolver, annotations)
             .filter { it.classKind == ClassKind.CLASS }
             .partition { it.validate() }
             .let { (valid, defer) ->
                 valid.forEach {
-                    writeDsl(context, it)
-                    writeBuilder(context, it)
+                    val bean = context.introspector.getBean(it)
+                    writeDsl(context, it, bean)
+                    writeBuilder(context, it, bean)
                 }
                 defer
             }
     }
 
-    private fun generateType(
-        context: ProcessorContext,
-        classDeclaration: KSClassDeclaration,
-        classGenerator: ClassGenerator,
-    ): TypeSpec {
-        val bean = context.introspector.getBean(classDeclaration)
+    private fun generateType(context: ProcessorContext, bean: Bean, classGenerator: ClassGenerator): TypeSpec {
         bean.properties.map { property ->
             val propertyType = property.type
             val propertyName = property.name
             classGenerator.addProperty(context, propertyName, propertyType)
         }
-        return classGenerator.type()
+        return classGenerator.type(context)
     }
 
-    private fun writeDsl(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
+    private fun writeDsl(context: ProcessorContext, classDeclaration: KSClassDeclaration, bean: Bean) {
         val builderClassName = context.dslInterfaceName(classDeclaration)
         val fileName = builderClassName.simpleName
         val file =
             FileSpec
                 .builder(classDeclaration.packageName.asString(), fileName)
                 .addType(
-                    generateType(context, classDeclaration, DslInterfaceClassGenerator(context, classDeclaration)),
-                ).build()
+                    generateType(context, bean, DslInterfaceClassGenerator(context, classDeclaration)),
+                ).also {
+                    context.extensions.contributeToDslFile(context, classDeclaration, it)
+                }.build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 
-    private fun writeBuilder(context: ProcessorContext, classDeclaration: KSClassDeclaration) {
+    private fun writeBuilder(context: ProcessorContext, classDeclaration: KSClassDeclaration, bean: Bean) {
         val builderClassName = context.builderClassName(classDeclaration)
         val fileName = builderClassName.simpleName
         val file =
             FileSpec
                 .builder(classDeclaration.packageName.asString(), fileName)
                 .addType(
-                    generateType(context, classDeclaration, BuilderGenerator(context, classDeclaration)),
-                ).build()
+                    generateType(context, bean, BuilderGenerator(context, classDeclaration)),
+                ).also {
+                    context.extensions.contributeToBuilderFile(context, classDeclaration, it)
+                }.build()
         file.writeTo(codeGenerator, file.kspDependencies(false))
     }
 

@@ -15,7 +15,7 @@ import me.qnox.builder.BuildContext
 import javax.annotation.processing.Generated
 
 class BuilderGenerator(
-    private val context: ProcessorContext,
+    context: ProcessorContext,
     private val classDeclaration: KSClassDeclaration,
 ) : ClassGenerator {
     private val classBuilder: TypeSpec.Builder
@@ -32,11 +32,12 @@ class BuilderGenerator(
         classBuilder.addSuperinterface(context.dslInterfaceName(classDeclaration))
     }
 
-    override fun type(): TypeSpec {
+    override fun type(context: ProcessorContext): TypeSpec {
         val returnType = classDeclaration.asType(emptyList()).toTypeName()
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
         val init = generateInitializer(context, parameters)
         return classBuilder
+            .primaryConstructor(FunSpec.constructorBuilder().build())
             .addFunction(
                 FunSpec
                     .builder("build")
@@ -51,14 +52,16 @@ class BuilderGenerator(
                     .addStatement("context?.preprocess(this)")
                     .addStatement("return %T(\n%L)", returnType, init)
                     .build(),
-            ).addOriginatingKSFile(classDeclaration.containingFile!!)
+            ).also {
+                context.extensions.contributeToBuilderType(context, classDeclaration, it)
+            }.addOriginatingKSFile(classDeclaration.containingFile!!)
             .build()
     }
 
     private fun generateInitializer(context: ProcessorContext, parameters: List<KSValueParameter>): CodeBlock {
         val codeBlock = CodeBlock.builder().indent()
         parameters.forEach {
-            val propertyInitializer = context.getGenerator(it.type).generateBuildCode(context, it.name!!, it.type)
+            val propertyInitializer = context.getGenerator(it.type).getConvertToObjectCode(context, it.name!!, it.type)
             codeBlock.add(
                 CodeBlock.of(
                     "%L = %L,\n",

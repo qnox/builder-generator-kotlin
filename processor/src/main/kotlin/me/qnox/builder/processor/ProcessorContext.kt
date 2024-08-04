@@ -15,6 +15,7 @@ import me.qnox.builder.processor.generators.SimpleGenerator
 class ProcessorContext(
     val resolver: Resolver,
     private val annotations: Set<String>,
+    val extensions: Extensions,
 ) {
     val introspector = BeanIntrospector()
 

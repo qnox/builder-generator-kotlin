@@ -9,7 +9,7 @@ import javax.annotation.processing.Generated
 
 class DslInterfaceClassGenerator(
     context: ProcessorContext,
-    classDeclaration: KSClassDeclaration,
+    private val classDeclaration: KSClassDeclaration,
 ) : ClassGenerator {
     private val classBuilder =
         TypeSpec.interfaceBuilder(context.dslInterfaceName(classDeclaration)).also {
@@ -21,7 +21,10 @@ class DslInterfaceClassGenerator(
             )
         }
 
-    override fun type() = classBuilder.build()
+    override fun type(context: ProcessorContext) = classBuilder
+        .also {
+            context.extensions.contributeToDslType(context, classDeclaration, it)
+        }.build()
 
     override fun addProperty(context: ProcessorContext, propertyName: String, propertyType: KSTypeReference) {
         context.getGenerator(propertyType).contributeToDslClass(context, classBuilder, propertyName, propertyType)

@@ -51,7 +51,7 @@ class SimpleGenerator : Generator {
         )
     }
 
-    override fun generateBuildCode(
+    override fun getConvertToObjectCode(
         context: ProcessorContext,
         propertyName: KSName,
         propertyType: KSTypeReference,
@@ -72,4 +72,12 @@ class SimpleGenerator : Generator {
                 .build(),
         )
     }
+
+    override fun getConvertToBuilderCode(
+        context: ProcessorContext,
+        propertyName: String,
+        type: KSTypeReference,
+        source: String,
+        destination: String,
+    ): CodeBlock = CodeBlock.of("%L.%L(%L)\n", destination, propertyName, source)
 }

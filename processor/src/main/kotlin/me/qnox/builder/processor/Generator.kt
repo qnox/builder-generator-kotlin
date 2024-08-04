@@ -29,7 +29,19 @@ interface Generator {
         propertyType: KSTypeReference,
     )
 
-    fun generateBuildCode(context: ProcessorContext, propertyName: KSName, propertyType: KSTypeReference): CodeBlock
+    fun getConvertToObjectCode(
+        context: ProcessorContext,
+        propertyName: KSName,
+        propertyType: KSTypeReference,
+    ): CodeBlock
+
+    fun getConvertToBuilderCode(
+        context: ProcessorContext,
+        propertyName: String,
+        type: KSTypeReference,
+        source: String,
+        destination: String,
+    ): CodeBlock
 }
 
 val valueHolder = ValueHolder::class.asClassName()

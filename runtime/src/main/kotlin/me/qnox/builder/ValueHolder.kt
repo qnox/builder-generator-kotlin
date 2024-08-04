@@ -22,9 +22,10 @@ class ValueHolder<T>(
         this.value = value
     }
 
-    fun ifAbsent(supplier: () -> T) {
+    fun computeIfAbsent(supplier: () -> T): T {
         if (!set) {
             _value = supplier()
         }
+        return _value as T
     }
 }
