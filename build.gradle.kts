@@ -2,17 +2,11 @@ import com.diffplug.gradle.spotless.SpotlessExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 
 plugins {
-    kotlin("jvm") version "1.9.25" apply false
+    alias(libs.plugins.kotlin.jvm) apply false
     `maven-publish`
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-    id("org.jetbrains.dokka") version "1.9.20"
-    id("com.diffplug.spotless") version "6.25.0" apply false
-}
-
-buildscript {
-    dependencies {
-        classpath(kotlin("gradle-plugin", version = "1.9.25"))
-    }
+    alias(libs.plugins.nexus.publish)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.spotless)
 }
 
 allprojects {

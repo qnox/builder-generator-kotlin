@@ -3,13 +3,13 @@ plugins {
 }
 
 dependencies {
-    implementation("com.google.devtools.ksp:symbol-processing-api:1.9.25-1.0.20")
-    implementation("com.squareup:kotlinpoet-ksp:1.18.1")
+    implementation(libs.ksp.api)
+    implementation(libs.kotlinpoet.ksp)
     implementation(project(":runtime"))
     testImplementation(kotlin("test"))
-    testImplementation("com.google.devtools.ksp:symbol-processing:1.9.25-1.0.20")
-    testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.6.0")
-    testImplementation("io.kotest:kotest-assertions-core:5.5.4")
+    testImplementation(libs.ksp.processor)
+    testImplementation(libs.kotlin.compile.testing)
+    testImplementation(libs.kotest.core)
     testImplementation(kotlin("reflect"))
 }
 
