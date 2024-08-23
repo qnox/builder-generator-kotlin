@@ -3,7 +3,7 @@ ksp = "1.9.25-1.0.20"
 kotlin-compile-testing = "1.6.0"
 kotest = "5.9.1"
 kotlinpoet = "1.18.1"
-kotlin = "1.9.25"
+kotlin = "2.0.20"
 
 [libraries]
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
