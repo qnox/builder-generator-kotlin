@@ -1,5 +1,5 @@
 [versions]
-ksp = "1.9.25-1.0.20"
+ksp = "2.0.21-1.0.28"
 kotlin-compile-testing = "1.6.0"
 kotest = "5.9.1"
 kotlinpoet = "1.18.1"
