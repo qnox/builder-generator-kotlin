@@ -1,9 +1,11 @@
 package me.qnox.builder.processor
 
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -124,11 +126,12 @@ class ProcessorTest {
         }
     }
 
-    private fun compile(vararg typeSource: SourceFile): KotlinCompilation.Result {
+    private fun compile(vararg typeSource: SourceFile): JvmCompilationResult {
         val compilation =
             KotlinCompilation().apply {
+                useKsp2()
                 sources = listOf(*typeSource)
-                symbolProcessorProviders = listOf(ProcessorProvider())
+                symbolProcessorProviders = mutableListOf(ProcessorProvider())
                 inheritClassPath = true
                 kspWithCompilation = true
             }

@@ -8,7 +8,7 @@ dependencies {
     implementation(project(":runtime"))
     testImplementation(kotlin("test"))
     testImplementation(libs.ksp.processor)
-    testImplementation(libs.kotlin.compile.testing)
+    testImplementation(libs.ksp.test)
     testImplementation(libs.kotest.core)
     testImplementation(kotlin("reflect"))
 }
