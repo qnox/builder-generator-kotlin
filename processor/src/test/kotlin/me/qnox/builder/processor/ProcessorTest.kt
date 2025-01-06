@@ -8,6 +8,8 @@ import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.reflection.shouldHaveMemberProperty
+import io.kotest.matchers.reflection.shouldNotHaveMemberProperty
 import io.kotest.matchers.shouldBe
 import me.qnox.builder.ListDsl
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -124,6 +126,27 @@ class ProcessorTest {
                     ),
                 )
         }
+    }
+
+    @Test
+    fun `test builder should ignore private properties`() {
+        val result =
+            compile(
+                SourceFile.kotlin(
+                    "KClass.kt",
+                    """
+                    import me.qnox.builder.Builder
+        
+                    @Builder
+                    class KClass(val attr: Int) {
+                        private val privateAttr: Int = 0
+                    }
+                """,
+                ),
+            )
+        val generatedBuilder = result.classLoader.loadClass("KClassBuilder").kotlin
+        generatedBuilder.shouldHaveMemberProperty("attr")
+        generatedBuilder.shouldNotHaveMemberProperty("privateAttr")
     }
 
     private fun compile(vararg typeSource: SourceFile): JvmCompilationResult {

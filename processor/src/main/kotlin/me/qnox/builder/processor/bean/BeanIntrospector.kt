@@ -1,6 +1,7 @@
 package me.qnox.builder.processor.bean
 
 import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 
 class BeanIntrospector {
@@ -10,6 +11,7 @@ class BeanIntrospector {
         Bean(
             s
                 .getDeclaredProperties()
+                .filter { it.isPublic() }
                 .map {
                     Property(it)
                 }.toList(),
